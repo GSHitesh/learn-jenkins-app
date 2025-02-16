@@ -21,25 +21,43 @@ pipeline {
                 
         //     }
         // }
-        stage('Test'){
+        // stage('Test'){
+        //     agent{
+        //         docker {
+        //             image 'node:18-alpine'
+        //             reuseNode true
+        //         }
+        //         }
+        //     steps{
+        //     sh '''
+        //     echo 'Test stage'
+        //     test -f build/index.html
+        //     npm test
+        //     '''
+        //     }
+        // }
+        stage('E2E'){
             agent{
                 docker {
-                    image 'node:18-alpine'
+                    image 'docker pull mcr.microsoft.com/playwright:v1.50.1-noble'
                     reuseNode true
                 }
-                }
+            }
             steps{
-            sh '''
-            echo 'Test stage'
-            test -f build/index.html
-            npm test
-            '''
+                sh '''
+                echo 'E2E stage'
+                npm install serve
+                node_modules/.bin/serve -s build &
+                sleep 10
+                npx playwright test --reporter=html
+
+                '''
             }
         }
     }
     post {
         always {
-            junit 'test-results/junit.xml'
+            junit 'jest-results/junit.xml'
         }
     }
 }
