@@ -1,5 +1,9 @@
 pipeline {
     agent any
+    environment {
+        NETLIFY_SITE_ID = 'e3e0983e-71af-4795-9c45-7b6205c6b4e5'
+        NETLIFY_AUTH_TOKEN = credentials.netlify_token
+    }
     stages {
         /*
 
@@ -24,7 +28,7 @@ pipeline {
         */
         stage('Test') {
             parallel {
-                stage('Test') {
+                stage('Unit Test') {
                     agent {
                         docker {
                             image 'node:18-alpine'
@@ -63,6 +67,24 @@ pipeline {
                             publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'playwright-report', reportFiles: 'index.html', reportName: 'Playwright HTML Report', reportTitles: '', useWrapperFileDirectly: true])
                         }
                     }
+                }
+            }
+        }
+        stage("Deploy"){
+            agent {
+                docker{
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            steps{
+                sh '''
+                    echo "Deploying the application"
+                    npm install netlify-cli
+                    echo "Deploying the application"
+                    echo "Site ID: $NETLIFY_SITE_ID"
+                    node_modules/.bin/netlify deploy --prod --dir=build
+
+                '''
                 }
             }
         }
